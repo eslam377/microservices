@@ -27,8 +27,8 @@ import java.util.stream.Collectors;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final WebClient webClient;
-    private final LoadBalancerClient loadBalancerClient ;
+    private final WebClient.Builder webClientBuilder;
+//    private final LoadBalancerClient loadBalancerClient ;
 
     public void placeOrder(OrderRequest orderRequest) throws IllegalAccessException {
 
@@ -47,14 +47,9 @@ public class OrderService {
                 .map(item -> item.getSkuCode())
                 .collect(Collectors.toList());
 
-        ServiceInstance serviceInstance = loadBalancerClient.choose("inventory-service");
-        String uri = serviceInstance.getUri().toString();
-
-        System.out.println("the uri is: " + uri);
-
         // call inventory service , and place order if product is in stock
-        InventoryResponse[] inventoryResponses = webClient.get()
-                        .uri(uri + "/api/inventory",
+        InventoryResponse[] inventoryResponses = webClientBuilder.build().get()
+                        .uri("http://inventory-service/api/inventory",
                                 uriBuilder -> uriBuilder.queryParam("skuCode", skuCodeList).build())
                         .retrieve()
                         .bodyToMono(InventoryResponse[].class)
